@@ -63,7 +63,7 @@ void setup() {
     true,   // Y  — aim vertical
     false, false, false, false, false, false
   );
-  bleGamepadConfig.setAxesMin(0);
+  bleGamepadConfig.setAxesMin(-32767);
   bleGamepadConfig.setAxesMax(32767);
 
   bleGamepad.begin(&bleGamepadConfig);

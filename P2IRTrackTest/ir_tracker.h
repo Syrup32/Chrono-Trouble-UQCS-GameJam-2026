@@ -5,40 +5,46 @@
 //  Expects PIXFORMAT_GRAYSCALE frames.
 //  Uses a row-run accumulator + centroid merge instead of flood-fill,
 //  which is fast enough to stay comfortably above 30 fps at QVGA.
+//
+//  When more than 4 blobs pass the area filter, the 4 with the largest
+//  area (brightest) are kept and passed to identifyCorners(). Stray
+//  reflections and noise blobs tend to be smaller than real IR LEDs,
+//  so area is a reliable brightness proxy.
 // =============================================================================
 
 #include "esp_camera.h"
 #include <math.h>
 
 // ── Tuning constants ─────────────────────────────────────────────────────────
-#define IR_THRESHOLD      80   // 0-255 brightness floor. Raise if ambient IR
+#define IR_THRESHOLD      170   // 0-255 brightness floor. Raise if ambient IR
                                 // causes noise; lower if LEDs appear dim.
-                                // Start at 220 and work down in a dark room.
 
-#define MIN_BLOB_AREA       3   // Minimum pixel-run area — ignores single hot
+#define MIN_BLOB_AREA      10   // Minimum pixel-run area — ignores single hot
                                 // pixels from sensor noise.
 
-#define MAX_BLOB_AREA     300   // Maximum pixel area — rejects large reflections
+#define MAX_BLOB_AREA     320   // Maximum pixel area — rejects large reflections
                                 // or window glare. Tune for your room.
 
 #define MERGE_RADIUS_SQ  (18*18)  // px² — runs closer than this are merged
                                   // into one candidate blob. Increase if the
                                   // same LED splits into 2 blobs at distance.
 
-#define MAX_BLOBS           4   // Exactly 4 corner LEDs — any frame with more
-                                // or fewer blobs is rejected by identifyCorners.
+#define MAX_BLOBS           4   // Final output is always capped at 4.
+                                // If more than 4 pass area filtering, the
+                                // 4 with the largest area are chosen.
 
 // ── Data types ───────────────────────────────────────────────────────────────
 struct Blob {
   float cx;    // centroid X in pixel coords
   float cy;    // centroid Y in pixel coords
-  int   area;  // weighted pixel count (useful for sorting / confidence)
+  int   area;  // weighted pixel count — proxy for brightness
 };
 
 struct BlobResult {
   Blob blobs[MAX_BLOBS];
-  int  count;       // number of valid blobs found this frame
-  int  rawCount;    // blobs before area filtering (diagnostic)
+  int  count;       // number of valid blobs returned (0–4)
+  int  rawCount;    // candidates before area filtering (diagnostic)
+  int  filteredCount; // blobs after area filter, before brightest-4 cull
 };
 
 // ── Implementation ───────────────────────────────────────────────────────────
@@ -47,15 +53,17 @@ struct BlobResult {
  * findBlobs()
  *
  * Scans every row of the grayscale frame buffer for contiguous bright runs,
- * accumulates weighted centroids, then merges nearby candidates.
+ * accumulates weighted centroids, merges nearby candidates, then returns
+ * the 4 brightest blobs that pass the area filter.
  *
  * Call with a PIXFORMAT_GRAYSCALE camera_fb_t.
  * Returns immediately; does NOT release the framebuffer (caller's job).
  */
 static BlobResult findBlobs(camera_fb_t *fb) {
   BlobResult result;
-  result.count    = 0;
-  result.rawCount = 0;
+  result.count         = 0;
+  result.rawCount      = 0;
+  result.filteredCount = 0;
 
   if (!fb || fb->format != PIXFORMAT_GRAYSCALE) {
     return result;
@@ -65,22 +73,19 @@ static BlobResult findBlobs(camera_fb_t *fb) {
   const int H = (int)fb->height;
   const uint8_t *pixels = fb->buf;
 
-  // Working pool for candidates.
-  // Each entry accumulates (sum_x*weight, sum_y*weight, total_weight).
-  // Weight = run length so centroid is properly area-weighted.
   struct Candidate {
-    float sx;    // sum of (cx * runLen)
-    float sy;    // sum of (cy * runLen)
-    int   n;     // total pixel count
+    float sx;
+    float sy;
+    int   n;
     bool  alive;
   };
 
-  // Static to avoid stack pressure on ESP32 — this function is called
-  // from a FreeRTOS task, stack is limited.
-  static Candidate pool[MAX_BLOBS * 6];
+  // Pool is larger than MAX_BLOBS to allow extra candidates before culling.
+  // 24 slots = enough for stray noise + 4 real LEDs with room to spare.
+  static Candidate pool[24];
   int nPool = 0;
 
-  // ── Row scan ────────────────────────────────────────────────────────────
+  // ── Row scan ──────────────────────────────────────────────────────────────
   for (int y = 0; y < H; y++) {
     const uint8_t *row = pixels + y * W;
     int runStart = -1;
@@ -89,21 +94,19 @@ static BlobResult findBlobs(camera_fb_t *fb) {
       bool bright = (x < W) && (row[x] >= IR_THRESHOLD);
 
       if (bright && runStart < 0) {
-        runStart = x;           // run begins
+        runStart = x;
       } else if (!bright && runStart >= 0) {
-        // run ends at x-1
         int runLen = x - runStart;
         float rcx = runStart + runLen * 0.5f;
         float rcy = (float)y;
 
-        // Try to merge into an existing nearby candidate
         bool merged = false;
         for (int i = 0; i < nPool; i++) {
           if (!pool[i].alive) continue;
           float ecx = pool[i].sx / pool[i].n;
           float ecy = pool[i].sy / pool[i].n;
-          float dx = rcx - ecx;
-          float dy = rcy - ecy;
+          float dx  = rcx - ecx;
+          float dy  = rcy - ecy;
           if ((dx * dx + dy * dy) < MERGE_RADIUS_SQ) {
             pool[i].sx += rcx * runLen;
             pool[i].sy += rcy * runLen;
@@ -113,12 +116,8 @@ static BlobResult findBlobs(camera_fb_t *fb) {
           }
         }
 
-        if (!merged) {
-          if (nPool < MAX_BLOBS * 6) {
-            pool[nPool++] = { rcx * runLen, rcy * runLen, runLen, true };
-          }
-          // If pool is full we silently drop — means >96 raw blobs,
-          // which usually means threshold is too low.
+        if (!merged && nPool < 24) {
+          pool[nPool++] = { rcx * runLen, rcy * runLen, runLen, true };
         }
 
         runStart = -1;
@@ -126,18 +125,56 @@ static BlobResult findBlobs(camera_fb_t *fb) {
     }
   }
 
-  // ── Collect valid blobs ──────────────────────────────────────────────────
   result.rawCount = nPool;
 
-  for (int i = 0; i < nPool && result.count < MAX_BLOBS; i++) {
+  // ── Area filter — collect all blobs that pass min/max area ───────────────
+  // Temporary store — up to 24 candidates can pass before we cull to 4
+  struct ValidBlob { float cx, cy; int area; };
+  static ValidBlob valid[24];
+  int nValid = 0;
+
+  for (int i = 0; i < nPool; i++) {
     if (!pool[i].alive) continue;
     int area = pool[i].n;
     if (area < MIN_BLOB_AREA || area > MAX_BLOB_AREA) continue;
+    if (nValid < 24) {
+      valid[nValid++] = {
+        pool[i].sx / area,
+        pool[i].sy / area,
+        area
+      };
+    }
+  }
+
+  result.filteredCount = nValid;
+
+  // ── Brightest-4 selection ─────────────────────────────────────────────────
+  // If ≤4 blobs passed the filter, use them all.
+  // If >4, pick the 4 with the largest area using a simple selection sort.
+  // Selection sort is fine here — we're sorting at most ~20 items, once per frame.
+  int needed = nValid < MAX_BLOBS ? nValid : MAX_BLOBS;
+
+  for (int pick = 0; pick < needed; pick++) {
+    // Find the largest area among remaining unpicked blobs
+    int bestIdx  = -1;
+    int bestArea = -1;
+    for (int i = pick; i < nValid; i++) {
+      if (valid[i].area > bestArea) {
+        bestArea = valid[i].area;
+        bestIdx  = i;
+      }
+    }
+    if (bestIdx < 0) break;
+
+    // Swap chosen blob into position [pick]
+    ValidBlob tmp    = valid[pick];
+    valid[pick]      = valid[bestIdx];
+    valid[bestIdx]   = tmp;
 
     result.blobs[result.count++] = {
-      pool[i].sx / area,
-      pool[i].sy / area,
-      area
+      valid[pick].cx,
+      valid[pick].cy,
+      valid[pick].area
     };
   }
 

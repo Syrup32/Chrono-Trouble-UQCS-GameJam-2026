@@ -19,7 +19,7 @@
 // Windows pairs each name as a separate device.
 // ===========================
 BleGamepadConfiguration bleGamepadConfig;
-BleGamepad bleGamepad("IR Gun P1", "IRGun", 100);
+BleGamepad bleGamepad("IR Gun P2", "IRGun", 100);
 
 // ===========================
 // Trigger switch
@@ -63,7 +63,7 @@ void setup() {
     true,   // Y  — aim vertical
     false, false, false, false, false, false
   );
-  bleGamepadConfig.setAxesMin(0);
+  bleGamepadConfig.setAxesMin(-32767);
   bleGamepadConfig.setAxesMax(32767);
 
   bleGamepad.begin(&bleGamepadConfig);
