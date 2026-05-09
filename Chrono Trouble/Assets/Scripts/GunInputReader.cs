@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
+using UnityEngine.InputSystem.LowLevel;
 
 public class GunInputReader : MonoBehaviour
 {
@@ -9,10 +10,11 @@ public class GunInputReader : MonoBehaviour
     [System.Serializable]
     public struct PlayerInput
     {
-        public Vector2 aimPosition;  // screen space 0-1
+        public Vector2 aimPosition;
         public bool fire;
         public bool trackingLost;
         public bool isConnected;
+        public bool isUsingMouse;
     }
 
     public PlayerInput[] players = new PlayerInput[2];
@@ -33,34 +35,45 @@ public class GunInputReader : MonoBehaviour
     {
         int gunCount = Joystick.all.Count;
 
-        for (int i = 0; i < 2; i++)
+        if (gunCount >= 2)
         {
-            // Try to get a physical gun for this player slot
-            if (i < gunCount)
-            {
-                players[i] = ReadGun(Joystick.all[i], i);
-            }
-            else
-            {
-                // Fall back to mouse for this slot
-                players[i] = ReadMouse(i);
-            }
+            players[0] = ReadGun(Joystick.all[0], 0);
+            players[1] = ReadGun(Joystick.all[1], 1);
+        }
+        else if (gunCount == 1)
+        {
+            players[0] = ReadGun(Joystick.all[0], 0);
+            players[1] = ReadMouse(1);
+        }
+        else
+        {
+            players[0] = ReadMouse(0);
+            players[1] = new PlayerInput { isConnected = false };
         }
     }
 
     PlayerInput ReadGun(Joystick gun, int playerIndex)
     {
-        var stick = gun.TryGetChildControl<StickControl>("stick");
         var triggerControl = gun.TryGetChildControl<ButtonControl>("trigger");
         var button2Control = gun.TryGetChildControl<ButtonControl>("button2");
 
         float normX = 0.5f;
         float normY = 0.5f;
 
-        if (stick != null)
+        try
         {
-            normX = (stick.x.ReadValue() + 1f) / 2f;
-            normY = 1f - (stick.y.ReadValue() + 1f) / 2f;
+            IRGunState state = default;
+            gun.CopyState(out state);  // removed InputState.Change line
+
+            short rawX = state.axisX;
+            short rawY = state.axisY;
+
+            normX = (rawX + 32767f) / 65534f;
+            normY = 1f - (rawY + 32767f) / 65534f;
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"State read failed: {e.Message}");
         }
 
         bool trackingLost = button2Control != null && button2Control.isPressed;
@@ -70,16 +83,15 @@ public class GunInputReader : MonoBehaviour
             aimPosition = new Vector2(normX, normY),
             fire = triggerControl != null && triggerControl.isPressed,
             trackingLost = trackingLost,
-            isConnected = true
+            isConnected = true,
+            isUsingMouse = false
         };
     }
 
     PlayerInput ReadMouse(int playerIndex)
     {
-        if (playerIndex > 0)
-        {
+        if (Mouse.current == null)
             return new PlayerInput { isConnected = false };
-        }
 
         Vector2 mousePos = Mouse.current.position.ReadValue();
 
@@ -91,7 +103,8 @@ public class GunInputReader : MonoBehaviour
             ),
             fire = Mouse.current.leftButton.isPressed,
             trackingLost = Mouse.current.rightButton.isPressed,
-            isConnected = true
+            isConnected = true,
+            isUsingMouse = true
         };
     }
 }

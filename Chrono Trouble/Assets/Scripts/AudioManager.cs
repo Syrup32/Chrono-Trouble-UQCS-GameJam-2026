@@ -8,10 +8,13 @@ public class AudioManager : MonoBehaviour
     public AudioClip gunshotSound;
     public AudioClip reloadSound;
     public AudioClip emptyClickSound; // optional - when firing with no ammo
+    public AudioClip headshotSound;  
+    
 
     [Header("Settings")]
     public float gunshotVolume = 1f;
     public float reloadVolume = 1f;
+    public float headshotVolume = 1f;
 
     private AudioSource _audioSource;
 
@@ -44,5 +47,11 @@ public class AudioManager : MonoBehaviour
     {
         if (emptyClickSound == null) return;
         _audioSource.PlayOneShot(emptyClickSound, gunshotVolume);
+    }
+    
+    public void PlayHeadshot()
+    {
+        if (headshotSound == null) return;
+        _audioSource.PlayOneShot(headshotSound, headshotVolume);
     }
 }

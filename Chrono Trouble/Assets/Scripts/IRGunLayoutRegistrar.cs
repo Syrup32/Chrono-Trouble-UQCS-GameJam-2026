@@ -27,8 +27,6 @@ public static class IRGunLayoutRegistrar
         );
 
 #if UNITY_EDITOR
-        // Remove any stale saved device states after domain reload
-        // to prevent duplicate device ID errors
         InputSystem.FlushDisconnectedDevices();
 #endif
     }
@@ -50,11 +48,11 @@ public struct IRGunState : IInputStateTypeInfo
 
     [System.Runtime.InteropServices.FieldOffset(2)]
     [InputControl(name = "stick/x", format = "SHRT", layout = "Axis",
-        parameters = "normalize,normalizeMin=-1,normalizeMax=1,normalizeZero=0")]
+        parameters = "normalize,normalizeMin=-32767,normalizeMax=32767,normalizeZero=0")]
     public short axisX;
 
     [System.Runtime.InteropServices.FieldOffset(4)]
     [InputControl(name = "stick/y", format = "SHRT", layout = "Axis",
-        parameters = "normalize,normalizeMin=-1,normalizeMax=1,normalizeZero=0,invert")]
+        parameters = "normalize,normalizeMin=-32767,normalizeMax=32767,normalizeZero=0")]
     public short axisY;
 }

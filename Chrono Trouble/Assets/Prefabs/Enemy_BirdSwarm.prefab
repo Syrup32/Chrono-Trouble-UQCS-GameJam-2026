@@ -227,8 +227,8 @@ MonoBehaviour:
   minScore: 50
   scoreDecayRate: 50
   canAttack: 1
-  timeBeforeAttacking: 3
-  attackInterval: 1
+  timeBeforeAttacking: 20
+  attackInterval: 7
   hitProbability: 0.8
   attackSound: {fileID: 0}
   deathSound: {fileID: 0}

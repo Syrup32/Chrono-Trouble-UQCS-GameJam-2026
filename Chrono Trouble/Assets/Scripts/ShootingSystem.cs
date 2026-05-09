@@ -1,6 +1,6 @@
 using UnityEngine;
-using TMPro;
 using System.Collections.Generic;
+using TMPro;
 
 public class ShootingSystem : MonoBehaviour
 {
@@ -12,9 +12,8 @@ public class ShootingSystem : MonoBehaviour
     public int maxAmmo = 10;
     public float reloadTime = 2f;
 
-    [Header("UI")]
-    public TextMeshProUGUI ammoP1Text;
-    public TextMeshProUGUI ammoP2Text;
+    [Header("Hit Detection")]
+    public float hitTolerancePixels = 3f;
 
     private bool[] _triggerHeld = new bool[2];
     private int[] _ammo = new int[2];
@@ -22,16 +21,9 @@ public class ShootingSystem : MonoBehaviour
     private bool[] _isReloading = new bool[2];
     private bool[] _triggerFiredOnEmpty = new bool[2];
 
-    [Header("Hit Detection")]
-    public float hitTolerancePixels = 3f;  // radius of hit area in pixels
-
     void Awake()
     {
-        if (Instance != null)
-        {
-            Destroy(gameObject);
-            return;
-        }
+        if (Instance != null) { Destroy(gameObject); return; }
         Instance = this;
         _ammo[0] = maxAmmo;
         _ammo[1] = maxAmmo;
@@ -64,9 +56,7 @@ public class ShootingSystem : MonoBehaviour
             _reloadTimer[playerIndex] += Time.deltaTime;
 
             if (!_isReloading[playerIndex])
-            {
                 _isReloading[playerIndex] = true;
-            }
 
             if (_reloadTimer[playerIndex] >= reloadTime)
             {
@@ -101,7 +91,7 @@ public class ShootingSystem : MonoBehaviour
         if (_ammo[playerIndex] <= 0)
         {
             AudioManager.Instance?.PlayEmptyClick();
-            _triggerFiredOnEmpty[playerIndex] = true; // ← trigger reload
+            _triggerFiredOnEmpty[playerIndex] = true;
             return;
         }
 
@@ -121,19 +111,17 @@ public class ShootingSystem : MonoBehaviour
 
         Vector2[] offsets = new Vector2[]
         {
-        Vector2.zero,
-        new Vector2(hitTolerancePixels, 0),
-        new Vector2(-hitTolerancePixels, 0),
-        new Vector2(0, hitTolerancePixels),
-        new Vector2(0, -hitTolerancePixels),
-        new Vector2(hitTolerancePixels, hitTolerancePixels),
-        new Vector2(-hitTolerancePixels, hitTolerancePixels),
-        new Vector2(hitTolerancePixels, -hitTolerancePixels),
-        new Vector2(-hitTolerancePixels, -hitTolerancePixels)
+            Vector2.zero,
+            new Vector2(hitTolerancePixels, 0),
+            new Vector2(-hitTolerancePixels, 0),
+            new Vector2(0, hitTolerancePixels),
+            new Vector2(0, -hitTolerancePixels),
+            new Vector2(hitTolerancePixels, hitTolerancePixels),
+            new Vector2(-hitTolerancePixels, hitTolerancePixels),
+            new Vector2(hitTolerancePixels, -hitTolerancePixels),
+            new Vector2(-hitTolerancePixels, -hitTolerancePixels)
         };
 
-        // Collect all unique hits across all offset rays
-        // Key = collider, Value = screen distance from center
         Dictionary<Collider, float> hitColliders =
             new Dictionary<Collider, float>();
 
@@ -153,7 +141,6 @@ public class ShootingSystem : MonoBehaviour
             {
                 if (hitColliders.ContainsKey(hit.collider)) continue;
 
-                // Measure how far this hit point is from crosshair center in screen space
                 Vector3 hitScreenPos = Camera.main.WorldToScreenPoint(hit.point);
                 float screenDist = Vector2.Distance(
                     new Vector2(hitScreenPos.x, hitScreenPos.y), centerScreen);
@@ -164,7 +151,6 @@ public class ShootingSystem : MonoBehaviour
 
         if (hitColliders.Count == 0) return;
 
-        // Find the collider closest to crosshair center
         Collider closest = null;
         float closestDist = float.MaxValue;
 
@@ -179,7 +165,17 @@ public class ShootingSystem : MonoBehaviour
 
         if (closest == null) return;
 
-        // Process the closest hit
+        // Check headshot first
+        HeadCollider headCollider = closest.GetComponent<HeadCollider>();
+        if (headCollider != null)
+        {
+            headCollider.GetHit(playerIndex);
+            AudioManager.Instance?.PlayHeadshot();
+            Debug.Log($"P{playerIndex + 1} HEADSHOT!");
+            return;
+        }
+
+        // Check bird proxy
         BirdHitProxy birdProxy = closest.GetComponent<BirdHitProxy>();
         if (birdProxy != null)
         {
@@ -187,6 +183,7 @@ public class ShootingSystem : MonoBehaviour
             return;
         }
 
+        // Check enemy
         Enemy enemy = closest.GetComponent<Enemy>();
         if (enemy != null && !enemy.isDead)
         {
@@ -194,6 +191,7 @@ public class ShootingSystem : MonoBehaviour
             return;
         }
 
+        // Check stage target
         StageTarget stageTarget = closest.GetComponent<StageTarget>();
         if (stageTarget != null)
         {
@@ -208,5 +206,6 @@ public class ShootingSystem : MonoBehaviour
 
     public bool IsReloading(int playerIndex) => _isReloading[playerIndex];
     public int GetAmmo(int playerIndex) => _ammo[playerIndex];
-    public float GetReloadProgress(int playerIndex) => _reloadTimer[playerIndex] / reloadTime;
+    public float GetReloadProgress(int playerIndex) =>
+        _reloadTimer[playerIndex] / reloadTime;
 }
