@@ -1736,3 +1736,31 @@ Memory consumption went from 189.1 MB to 183.2 MB.
 Total: 11.248600 ms (FindLiveObjects: 1.047500 ms CreateObjectMapping: 1.218800 ms MarkObjects: 5.608400 ms  DeleteObjects: 3.371900 ms)
 
 Prepare: number of updated asset objects reloaded= 0
+========================================================================
+Received Import Request.
+  Time since last request: 17414.430419 seconds.
+  path: Assets/Scripts/EnemySpawner.cs
+  importAddress: Guid(85e639cd059247a4a89bad68b1969f4e) Importer(2089858483,b0f066a214c2f5e87bad3c948f4d605d)
+Start importing Assets/Scripts/EnemySpawner.cs using Guid(85e639cd059247a4a89bad68b1969f4e) Importer(2089858483,b0f066a214c2f5e87bad3c948f4d605d) (ScriptedImporter) -> (Import Result ID: '6748a9a62b14c9be11e9d1b40ed21001') in 0.2063847 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=6714ed436b52e729ac4aae8bab2963ba DependenciesID=a0677d966f74a13b538e9fe333c9ea0d StaticDependenciesID=c7119cb04eea2d182ad7494f949dd63d 
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 0
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.000063 seconds.
+  path: Assets/Scripts/GameManager.cs
+  importAddress: Guid(8a69b56b9021b5649ab6dbf57cf8165d) Importer(2089858483,b0f066a214c2f5e87bad3c948f4d605d)
+Start importing Assets/Scripts/GameManager.cs using Guid(8a69b56b9021b5649ab6dbf57cf8165d) Importer(2089858483,b0f066a214c2f5e87bad3c948f4d605d) (ScriptedImporter) -> (Import Result ID: 'f6d6e5936cfe5bea99c1b9bd1fd4e174') in 0.0057499 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=e00c27fba70acb2e2e97a30427d8e190 DependenciesID=40ee25bea1245e4c4205b47eedba2f86 StaticDependenciesID=860f0c227913492360f6319fb6c415c7 
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 0
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.000031 seconds.
+  path: Assets/Scripts/ShootingSystem.cs
+  importAddress: Guid(806bb5c270007554aa04c103ddd8740d) Importer(2089858483,b0f066a214c2f5e87bad3c948f4d605d)
+Start importing Assets/Scripts/ShootingSystem.cs using Guid(806bb5c270007554aa04c103ddd8740d) Importer(2089858483,b0f066a214c2f5e87bad3c948f4d605d) (ScriptedImporter) -> (Import Result ID: '2c7877ded2873f3915180d82f19a18f7') in 0.0058919 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=2153dfeb85f70f2493f78c1005b31678 DependenciesID=3617a14614db73eecf00667983414e34 StaticDependenciesID=c598783ab4a2fa927e1585fcf115d2de 
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 0
+
+Editor requested this worker to shutdown with reason: Scaling down because of idle timeout
+AssetImportWorker is now disconnected from the server
+Process exiting
+Exiting without the bug reporter. Application will terminate with return code 0

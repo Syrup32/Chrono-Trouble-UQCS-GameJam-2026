@@ -1,5 +1,4 @@
 using UnityEngine;
-using TMPro;
 
 public class GameManager : MonoBehaviour
 {
@@ -10,48 +9,41 @@ public class GameManager : MonoBehaviour
     private int[] _lives = new int[2];
     private int[] _scores = new int[2];
 
-    [Header("UI")]
-    public TextMeshProUGUI livesP1Text;
-    public TextMeshProUGUI livesP2Text;
-    public TextMeshProUGUI scoreP1Text;
-    public TextMeshProUGUI scoreP2Text;
+    [Header("Game Over")]
     public GameObject gameOverPanel;
 
     void Awake()
     {
+        if (Instance != null) { Destroy(gameObject); return; }
         Instance = this;
         _lives[0] = startingLives;
         _lives[1] = startingLives;
         if (gameOverPanel) gameOverPanel.SetActive(false);
-        UpdateUI();
+        UpdateHUD();
     }
 
     public void EnemyShot()
     {
-        // Enemy shoots both players
         for (int i = 0; i < 2; i++)
         {
             if (!GunInputReader.Instance.players[i].isConnected) continue;
             _lives[i]--;
             if (_lives[i] < 0) _lives[i] = 0;
         }
-
-        UpdateUI();
+        UpdateHUD();
         CheckGameOver();
     }
 
     public void AddScore(int points, int playerIndex)
     {
         _scores[playerIndex] += points;
-        UpdateUI();
+        UpdateHUD();
     }
 
-    void UpdateUI()
+    void UpdateHUD()
     {
-        if (livesP1Text) livesP1Text.text = $"P1 Lives: {_lives[0]}";
-        if (livesP2Text) livesP2Text.text = $"P2 Lives: {_lives[1]}";
-        if (scoreP1Text) scoreP1Text.text = $"P1 Score: {_scores[0]}";
-        if (scoreP2Text) scoreP2Text.text = $"P2 Score: {_scores[1]}";
+        HUDManager.Instance?.UpdateLives(_lives[0], _lives[1]);
+        HUDManager.Instance?.UpdateScore(_scores[0], _scores[1]);
     }
 
     void CheckGameOver()

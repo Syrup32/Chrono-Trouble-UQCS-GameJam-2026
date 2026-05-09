@@ -19,6 +19,11 @@ public class GunInputReader : MonoBehaviour
 
     void Awake()
     {
+        if (Instance != null)
+        {
+            Destroy(gameObject);
+            return;
+        }
         Instance = this;
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Confined;

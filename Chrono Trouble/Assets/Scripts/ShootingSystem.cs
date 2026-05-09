@@ -22,6 +22,11 @@ public class ShootingSystem : MonoBehaviour
 
     void Awake()
     {
+        if (Instance != null)
+        {
+            Destroy(gameObject);
+            return;
+        }
         Instance = this;
         _ammo[0] = maxAmmo;
         _ammo[1] = maxAmmo;
@@ -64,6 +69,7 @@ public class ShootingSystem : MonoBehaviour
                 _reloadTimer[playerIndex] = 0f;
                 _isReloading[playerIndex] = false;
                 UpdateAmmoUI();
+                AudioManager.Instance?.PlayReload();
             }
         }
         else
@@ -97,6 +103,7 @@ public class ShootingSystem : MonoBehaviour
         // Consume ammo regardless of whether we hit anything
         _ammo[playerIndex]--;
         UpdateAmmoUI();
+        AudioManager.Instance?.PlayGunshot();
 
         Vector3 screenPos = new Vector3(
             normalisedAim.x * Screen.width,
@@ -112,14 +119,21 @@ public class ShootingSystem : MonoBehaviour
             if (enemy != null && !enemy.isDead)
             {
                 enemy.GetHit(playerIndex);
+                return;
+            }
+
+            StageTarget stageTarget = hit.collider.GetComponent<StageTarget>();
+            if (stageTarget != null)
+            {
+                stageTarget.OnShot();
+                return;
             }
         }
     }
 
     void UpdateAmmoUI()
     {
-        if (ammoP1Text) ammoP1Text.text = $"P1 Ammo: {_ammo[0]}/{maxAmmo}";
-        if (ammoP2Text) ammoP2Text.text = $"P2 Ammo: {_ammo[1]}/{maxAmmo}";
+        HUDManager.Instance?.UpdateAmmo(_ammo[0], _ammo[1], maxAmmo);
     }
 
     public bool IsReloading(int playerIndex) => _isReloading[playerIndex];
