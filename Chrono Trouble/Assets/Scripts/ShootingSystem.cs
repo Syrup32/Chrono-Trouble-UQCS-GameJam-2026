@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using System.Collections.Generic;
 
 public class ShootingSystem : MonoBehaviour
 {
@@ -118,19 +119,23 @@ public class ShootingSystem : MonoBehaviour
             normalisedAim.y * Screen.height
         );
 
-        // Cast multiple rays in a pattern around the crosshair center
         Vector2[] offsets = new Vector2[]
         {
-        Vector2.zero,                                          // center
-        new Vector2(hitTolerancePixels, 0),                   // right
-        new Vector2(-hitTolerancePixels, 0),                  // left
-        new Vector2(0, hitTolerancePixels),                   // up
-        new Vector2(0, -hitTolerancePixels),                  // down
-        new Vector2(hitTolerancePixels, hitTolerancePixels),  // top right
-        new Vector2(-hitTolerancePixels, hitTolerancePixels), // top left
-        new Vector2(hitTolerancePixels, -hitTolerancePixels), // bottom right
-        new Vector2(-hitTolerancePixels, -hitTolerancePixels) // bottom left
+        Vector2.zero,
+        new Vector2(hitTolerancePixels, 0),
+        new Vector2(-hitTolerancePixels, 0),
+        new Vector2(0, hitTolerancePixels),
+        new Vector2(0, -hitTolerancePixels),
+        new Vector2(hitTolerancePixels, hitTolerancePixels),
+        new Vector2(-hitTolerancePixels, hitTolerancePixels),
+        new Vector2(hitTolerancePixels, -hitTolerancePixels),
+        new Vector2(-hitTolerancePixels, -hitTolerancePixels)
         };
+
+        // Collect all unique hits across all offset rays
+        // Key = collider, Value = screen distance from center
+        Dictionary<Collider, float> hitColliders =
+            new Dictionary<Collider, float>();
 
         foreach (Vector2 offset in offsets)
         {
@@ -141,23 +146,58 @@ public class ShootingSystem : MonoBehaviour
             );
 
             Ray ray = Camera.main.ScreenPointToRay(screenPos);
+            RaycastHit[] hits = Physics.RaycastAll(
+                ray, raycastDistance, enemyLayer);
 
-            if (Physics.Raycast(ray, out RaycastHit hit, raycastDistance, enemyLayer))
+            foreach (RaycastHit hit in hits)
             {
-                Enemy enemy = hit.collider.GetComponent<Enemy>();
-                if (enemy != null && !enemy.isDead)
-                {
-                    enemy.GetHit(playerIndex);
-                    return; // stop after first hit — one shot, one hit
-                }
+                if (hitColliders.ContainsKey(hit.collider)) continue;
 
-                StageTarget stageTarget = hit.collider.GetComponent<StageTarget>();
-                if (stageTarget != null)
-                {
-                    stageTarget.OnShot();
-                    return;
-                }
+                // Measure how far this hit point is from crosshair center in screen space
+                Vector3 hitScreenPos = Camera.main.WorldToScreenPoint(hit.point);
+                float screenDist = Vector2.Distance(
+                    new Vector2(hitScreenPos.x, hitScreenPos.y), centerScreen);
+
+                hitColliders[hit.collider] = screenDist;
             }
+        }
+
+        if (hitColliders.Count == 0) return;
+
+        // Find the collider closest to crosshair center
+        Collider closest = null;
+        float closestDist = float.MaxValue;
+
+        foreach (var kvp in hitColliders)
+        {
+            if (kvp.Value < closestDist)
+            {
+                closestDist = kvp.Value;
+                closest = kvp.Key;
+            }
+        }
+
+        if (closest == null) return;
+
+        // Process the closest hit
+        BirdHitProxy birdProxy = closest.GetComponent<BirdHitProxy>();
+        if (birdProxy != null)
+        {
+            birdProxy.GetHit(playerIndex, 1);
+            return;
+        }
+
+        Enemy enemy = closest.GetComponent<Enemy>();
+        if (enemy != null && !enemy.isDead)
+        {
+            enemy.GetHit(playerIndex, 1);
+            return;
+        }
+
+        StageTarget stageTarget = closest.GetComponent<StageTarget>();
+        if (stageTarget != null)
+        {
+            stageTarget.OnShot();
         }
     }
 

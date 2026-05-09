@@ -128,12 +128,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Enemy
   maxHitPoints: 2
-  isMoving: 0
-  moveSpeed: 50
-  moveDirection: {x: 1, y: 0, z: 0}
   maxScore: 500
   minScore: 50
   scoreDecayRate: 20
+  canAttack: 1
   timeBeforeAttacking: 10
   attackInterval: 5
   hitProbability: 1

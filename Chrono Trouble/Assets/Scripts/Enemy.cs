@@ -1,16 +1,12 @@
-using System.Collections;
 using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
 
 public class Enemy : MonoBehaviour
 {
     [Header("Health")]
     public int maxHitPoints = 1;
-    private int _currentHitPoints;
-
-    [Header("Movement")]
-    public bool isMoving = false;
-    public float moveSpeed = 2f;
-    public Vector3 moveDirection = Vector3.right;
+    protected int _currentHitPoints;
 
     [Header("Scoring")]
     public int maxScore = 500;
@@ -38,28 +34,28 @@ public class Enemy : MonoBehaviour
     [Header("State")]
     public bool isDead = false;
 
-    private float _timeAlive = 0f;
-    private float _attackTimer = 0f;
-    private bool _isAttacking = false;
-    private Vector3 _startPosition;
-    private AudioSource _audioSource;
+    protected float _timeAlive = 0f;
+    protected float _attackTimer = 0f;
+    protected bool _isAttacking = false;
+    protected AudioSource _audioSource;
 
-    void Awake()
+    public System.Action OnEnemyDeactivated;
+
+    protected virtual void Awake()
     {
         _audioSource = gameObject.AddComponent<AudioSource>();
     }
 
-    void OnEnable()
+    protected virtual void OnEnable()
     {
         isDead = false;
         _timeAlive = 0f;
         _attackTimer = 0f;
         _isAttacking = false;
         _currentHitPoints = maxHitPoints;
-        _startPosition = transform.position;
     }
 
-    void Update()
+    protected virtual void Update()
     {
         if (isDead) return;
 
@@ -83,23 +79,11 @@ public class Enemy : MonoBehaviour
                 }
             }
         }
-
-        if (isMoving)
-        {
-            transform.position += moveDirection * moveSpeed * Time.deltaTime;
-
-            Vector3 viewPos = Camera.main.WorldToViewportPoint(transform.position);
-            if (viewPos.x < 0.05f || viewPos.x > 0.95f)
-                moveDirection.x = -moveDirection.x;
-            if (viewPos.y < 0.05f || viewPos.y > 0.95f)
-                moveDirection.y = -moveDirection.y;
-        }
     }
 
-    void DamagePlayer()
+    protected void DamagePlayer()
     {
         if (isDead) return;
-
         if (Random.value > hitProbability) return;
 
         bool p1Connected = GunInputReader.Instance.players[0].isConnected;
@@ -110,38 +94,31 @@ public class Enemy : MonoBehaviour
         int targetPlayer = -1;
 
         if (p1Connected && p2Connected)
-        {
             targetPlayer = Random.Range(0, 2);
-        }
         else if (p1Connected)
-        {
             targetPlayer = 0;
-        }
         else if (p2Connected)
-        {
             targetPlayer = 1;
-        }
 
         if (targetPlayer >= 0)
         {
             if (attackSound != null)
                 _audioSource.PlayOneShot(attackSound, attackSoundVolume);
-
             GameManager.Instance?.EnemyShot(targetPlayer);
         }
     }
 
-    int CalculateScore()
+    protected int CalculateScore()
     {
         int score = maxScore - Mathf.RoundToInt(_timeAlive * scoreDecayRate);
         return Mathf.Max(score, minScore);
     }
 
-    public void GetHit(int playerIndex)
+    public virtual void GetHit(int playerIndex, int damage = 1)
     {
         if (isDead) return;
 
-        _currentHitPoints--;
+        _currentHitPoints -= damage;
 
         if (_currentHitPoints > 0)
         {
@@ -150,6 +127,11 @@ public class Enemy : MonoBehaviour
             return;
         }
 
+        Die(playerIndex);
+    }
+
+    protected virtual void Die(int playerIndex)
+    {
         isDead = true;
 
         int score = CalculateScore();
@@ -168,23 +150,21 @@ public class Enemy : MonoBehaviour
 
     IEnumerator DeactivateAfterSound(float delay)
     {
-        // Disable visuals and collision immediately
-        GetComponent<Renderer>().enabled = false;
-        GetComponent<Collider>().enabled = false;
+        Renderer rend = GetComponent<Renderer>();
+        Collider col = GetComponent<Collider>();
 
-        // Wait for sound to finish
+        if (rend) rend.enabled = false;
+        if (col) col.enabled = false;
+
         yield return new WaitForSeconds(delay);
 
-        // Re-enable for next spawn
-        GetComponent<Renderer>().enabled = true;
-        GetComponent<Collider>().enabled = true;
+        if (rend) rend.enabled = true;
+        if (col) col.enabled = true;
 
         gameObject.SetActive(false);
     }
 
-    public System.Action OnEnemyDeactivated;
-
-    void OnDisable()
+    protected void OnDisable()
     {
         OnEnemyDeactivated?.Invoke();
     }
