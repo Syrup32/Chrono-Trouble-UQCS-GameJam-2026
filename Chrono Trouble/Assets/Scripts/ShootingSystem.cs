@@ -1,0 +1,128 @@
+using UnityEngine;
+using TMPro;
+
+public class ShootingSystem : MonoBehaviour
+{
+    public static ShootingSystem Instance;
+
+    [Header("Settings")]
+    public LayerMask enemyLayer;
+    public float raycastDistance = 100f;
+    public int maxAmmo = 10;
+    public float reloadTime = 2f;
+
+    [Header("UI")]
+    public TextMeshProUGUI ammoP1Text;
+    public TextMeshProUGUI ammoP2Text;
+
+    private bool[] _triggerHeld = new bool[2];
+    private int[] _ammo = new int[2];
+    private float[] _reloadTimer = new float[2];
+    private bool[] _isReloading = new bool[2];
+
+    void Awake()
+    {
+        Instance = this;
+        _ammo[0] = maxAmmo;
+        _ammo[1] = maxAmmo;
+        UpdateAmmoUI();
+    }
+
+    void Update()
+    {
+        if (GunInputReader.Instance == null) return;
+
+        for (int i = 0; i < 2; i++)
+        {
+            var input = GunInputReader.Instance.players[i];
+
+            if (!input.isConnected)
+            {
+                _triggerHeld[i] = false;
+                continue;
+            }
+
+            HandleReload(i, input);
+            HandleShooting(i, input);
+        }
+    }
+
+    void HandleReload(int playerIndex, GunInputReader.PlayerInput input)
+    {
+        if (input.trackingLost || _ammo[playerIndex] <= 0)
+        {
+            _reloadTimer[playerIndex] += Time.deltaTime;
+
+            if (!_isReloading[playerIndex])
+            {
+                _isReloading[playerIndex] = true;
+            }
+
+            if (_reloadTimer[playerIndex] >= reloadTime)
+            {
+                _ammo[playerIndex] = maxAmmo;
+                _reloadTimer[playerIndex] = 0f;
+                _isReloading[playerIndex] = false;
+                UpdateAmmoUI();
+            }
+        }
+        else
+        {
+            // Gun on screen and has ammo — cancel any in-progress reload
+            if (_isReloading[playerIndex])
+            {
+                _reloadTimer[playerIndex] = 0f;
+                _isReloading[playerIndex] = false;
+            }
+        }
+    }
+
+    void HandleShooting(int playerIndex, GunInputReader.PlayerInput input)
+    {
+        if (_isReloading[playerIndex]) return;
+        if (_ammo[playerIndex] <= 0) return;
+        if (input.trackingLost) return;
+
+        bool triggerDown = input.fire && !_triggerHeld[playerIndex];
+        _triggerHeld[playerIndex] = input.fire;
+
+        if (triggerDown)
+        {
+            TryShoot(playerIndex, input.aimPosition);
+        }
+    }
+
+    void TryShoot(int playerIndex, Vector2 normalisedAim)
+    {
+        // Consume ammo regardless of whether we hit anything
+        _ammo[playerIndex]--;
+        UpdateAmmoUI();
+
+        Vector3 screenPos = new Vector3(
+            normalisedAim.x * Screen.width,
+            normalisedAim.y * Screen.height,
+            0f
+        );
+
+        Ray ray = Camera.main.ScreenPointToRay(screenPos);
+
+        if (Physics.Raycast(ray, out RaycastHit hit, raycastDistance, enemyLayer))
+        {
+            Enemy enemy = hit.collider.GetComponent<Enemy>();
+            if (enemy != null && !enemy.isDead)
+            {
+                enemy.GetHit(playerIndex);
+            }
+        }
+    }
+
+    void UpdateAmmoUI()
+    {
+        if (ammoP1Text) ammoP1Text.text = $"P1 Ammo: {_ammo[0]}/{maxAmmo}";
+        if (ammoP2Text) ammoP2Text.text = $"P2 Ammo: {_ammo[1]}/{maxAmmo}";
+    }
+
+    public bool IsReloading(int playerIndex) => _isReloading[playerIndex];
+    public int GetAmmo(int playerIndex) => _ammo[playerIndex];
+    public float GetReloadProgress(int playerIndex) => _reloadTimer[playerIndex] / reloadTime;
+}

@@ -27,7 +27,7 @@ BleGamepad bleGamepad("IR Gun P1", "IRGun", 100);
 // HIGH = pressed, LOW = released
 // ===========================
 #define TRIGGER_PIN        13
-#define DEBOUNCE_DELAY_MS  50   // ms — increase if phantom presses occur
+#define DEBOUNCE_DELAY_MS  30   // ms — increase if phantom presses occur
 
 // Debounce state
 static bool          _triggerLastRaw      = LOW;
