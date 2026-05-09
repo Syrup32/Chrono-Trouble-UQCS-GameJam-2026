@@ -155,7 +155,7 @@ public class TutorialManager : MonoBehaviour
         Enemy enemy = target.GetComponent<Enemy>();
         if (enemy != null)
         {
-            enemy.timeToShoot = useTimer ? 3f : 999f;
+            enemy.timeBeforeAttacking = useTimer ? 3f : 999f;
             enemy.OnEnemyDeactivated += () => _shotsHit++;
         }
 

@@ -713,6 +713,7 @@ MonoBehaviour:
   reloadTime: 1
   ammoP1Text: {fileID: 9111093483404282895}
   ammoP2Text: {fileID: 8611019898161442577}
+  hitTolerancePixels: 12
 --- !u!1 &2625855405750735987
 GameObject:
   m_ObjectHideFlags: 0

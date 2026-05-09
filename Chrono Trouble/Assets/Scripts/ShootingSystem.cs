@@ -19,6 +19,10 @@ public class ShootingSystem : MonoBehaviour
     private int[] _ammo = new int[2];
     private float[] _reloadTimer = new float[2];
     private bool[] _isReloading = new bool[2];
+    private bool[] _triggerFiredOnEmpty = new bool[2];
+
+    [Header("Hit Detection")]
+    public float hitTolerancePixels = 3f;  // radius of hit area in pixels
 
     void Awake()
     {
@@ -54,7 +58,7 @@ public class ShootingSystem : MonoBehaviour
 
     void HandleReload(int playerIndex, GunInputReader.PlayerInput input)
     {
-        if (input.trackingLost || _ammo[playerIndex] <= 0)
+        if (input.trackingLost || _triggerFiredOnEmpty[playerIndex])
         {
             _reloadTimer[playerIndex] += Time.deltaTime;
 
@@ -68,14 +72,14 @@ public class ShootingSystem : MonoBehaviour
                 _ammo[playerIndex] = maxAmmo;
                 _reloadTimer[playerIndex] = 0f;
                 _isReloading[playerIndex] = false;
+                _triggerFiredOnEmpty[playerIndex] = false;
                 UpdateAmmoUI();
                 AudioManager.Instance?.PlayReload();
             }
         }
         else
         {
-            // Gun on screen and has ammo — cancel any in-progress reload
-            if (_isReloading[playerIndex])
+            if (_isReloading[playerIndex] && !_triggerFiredOnEmpty[playerIndex])
             {
                 _reloadTimer[playerIndex] = 0f;
                 _isReloading[playerIndex] = false;
@@ -86,47 +90,73 @@ public class ShootingSystem : MonoBehaviour
     void HandleShooting(int playerIndex, GunInputReader.PlayerInput input)
     {
         if (_isReloading[playerIndex]) return;
-        if (_ammo[playerIndex] <= 0) return;
         if (input.trackingLost) return;
 
         bool triggerDown = input.fire && !_triggerHeld[playerIndex];
         _triggerHeld[playerIndex] = input.fire;
 
-        if (triggerDown)
+        if (!triggerDown) return;
+
+        if (_ammo[playerIndex] <= 0)
         {
-            TryShoot(playerIndex, input.aimPosition);
+            AudioManager.Instance?.PlayEmptyClick();
+            _triggerFiredOnEmpty[playerIndex] = true; // ← trigger reload
+            return;
         }
+
+        TryShoot(playerIndex, input.aimPosition);
     }
 
     void TryShoot(int playerIndex, Vector2 normalisedAim)
     {
-        // Consume ammo regardless of whether we hit anything
         _ammo[playerIndex]--;
         UpdateAmmoUI();
         AudioManager.Instance?.PlayGunshot();
 
-        Vector3 screenPos = new Vector3(
+        Vector2 centerScreen = new Vector2(
             normalisedAim.x * Screen.width,
-            normalisedAim.y * Screen.height,
-            0f
+            normalisedAim.y * Screen.height
         );
 
-        Ray ray = Camera.main.ScreenPointToRay(screenPos);
-
-        if (Physics.Raycast(ray, out RaycastHit hit, raycastDistance, enemyLayer))
+        // Cast multiple rays in a pattern around the crosshair center
+        Vector2[] offsets = new Vector2[]
         {
-            Enemy enemy = hit.collider.GetComponent<Enemy>();
-            if (enemy != null && !enemy.isDead)
-            {
-                enemy.GetHit(playerIndex);
-                return;
-            }
+        Vector2.zero,                                          // center
+        new Vector2(hitTolerancePixels, 0),                   // right
+        new Vector2(-hitTolerancePixels, 0),                  // left
+        new Vector2(0, hitTolerancePixels),                   // up
+        new Vector2(0, -hitTolerancePixels),                  // down
+        new Vector2(hitTolerancePixels, hitTolerancePixels),  // top right
+        new Vector2(-hitTolerancePixels, hitTolerancePixels), // top left
+        new Vector2(hitTolerancePixels, -hitTolerancePixels), // bottom right
+        new Vector2(-hitTolerancePixels, -hitTolerancePixels) // bottom left
+        };
 
-            StageTarget stageTarget = hit.collider.GetComponent<StageTarget>();
-            if (stageTarget != null)
+        foreach (Vector2 offset in offsets)
+        {
+            Vector3 screenPos = new Vector3(
+                centerScreen.x + offset.x,
+                centerScreen.y + offset.y,
+                0f
+            );
+
+            Ray ray = Camera.main.ScreenPointToRay(screenPos);
+
+            if (Physics.Raycast(ray, out RaycastHit hit, raycastDistance, enemyLayer))
             {
-                stageTarget.OnShot();
-                return;
+                Enemy enemy = hit.collider.GetComponent<Enemy>();
+                if (enemy != null && !enemy.isDead)
+                {
+                    enemy.GetHit(playerIndex);
+                    return; // stop after first hit — one shot, one hit
+                }
+
+                StageTarget stageTarget = hit.collider.GetComponent<StageTarget>();
+                if (stageTarget != null)
+                {
+                    stageTarget.OnShot();
+                    return;
+                }
             }
         }
     }

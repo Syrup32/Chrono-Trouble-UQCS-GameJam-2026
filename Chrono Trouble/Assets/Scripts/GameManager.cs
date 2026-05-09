@@ -22,14 +22,13 @@ public class GameManager : MonoBehaviour
         UpdateHUD();
     }
 
-    public void EnemyShot()
+    public void EnemyShot(int playerIndex)
     {
-        for (int i = 0; i < 2; i++)
-        {
-            if (!GunInputReader.Instance.players[i].isConnected) continue;
-            _lives[i]--;
-            if (_lives[i] < 0) _lives[i] = 0;
-        }
+        if (!GunInputReader.Instance.players[playerIndex].isConnected) return;
+
+        _lives[playerIndex]--;
+        if (_lives[playerIndex] < 0) _lives[playerIndex] = 0;
+
         UpdateHUD();
         CheckGameOver();
     }

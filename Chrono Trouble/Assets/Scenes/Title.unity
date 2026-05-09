@@ -367,9 +367,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f08c3e8b611d37143a6ad737c276334d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AudioManager
-  gunshotSound: {fileID: 0}
-  reloadSound: {fileID: 0}
-  emptyClickSound: {fileID: 0}
+  gunshotSound: {fileID: 8300000, guid: f659fdfb2710ef1428ed04205d259435, type: 3}
+  reloadSound: {fileID: 8300000, guid: 664568dead9488c428776d72af073ae6, type: 3}
+  emptyClickSound: {fileID: 8300000, guid: 99646087f293ad64f842e7964c6ea861, type: 3}
   gunshotVolume: 1
   reloadVolume: 1
 --- !u!4 &577732519

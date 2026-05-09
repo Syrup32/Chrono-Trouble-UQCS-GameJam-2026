@@ -127,9 +127,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f8c7fb94a7e4d054184c8cc06ea10d8d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Enemy
-  timeToShoot: 3
-  pointValue: 100
+  maxHitPoints: 2
   isMoving: 0
   moveSpeed: 50
-  moveDirection: {x: 1, y: 0}
+  moveDirection: {x: 1, y: 0, z: 0}
+  maxScore: 500
+  minScore: 50
+  scoreDecayRate: 20
+  timeBeforeAttacking: 10
+  attackInterval: 5
+  hitProbability: 1
+  attackSound: {fileID: 8300000, guid: f659fdfb2710ef1428ed04205d259435, type: 3}
+  deathSound: {fileID: 8300000, guid: 99646087f293ad64f842e7964c6ea861, type: 3}
+  hitSound: {fileID: 8300000, guid: 664568dead9488c428776d72af073ae6, type: 3}
+  attackSoundVolume: 1
+  deathSoundVolume: 1
+  hitSoundVolume: 1
   isDead: 0
