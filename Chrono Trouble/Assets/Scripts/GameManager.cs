@@ -1,4 +1,5 @@
 using UnityEngine;
+using TMPro;
 
 public class GameManager : MonoBehaviour
 {
@@ -9,8 +10,10 @@ public class GameManager : MonoBehaviour
     private int[] _lives = new int[2];
     private int[] _scores = new int[2];
 
-    [Header("Game Over")]
+    [Header("UI")]
     public GameObject gameOverPanel;
+    public GameObject missionCompletePanel;
+    public TextMeshProUGUI gameOverText;
 
     void Awake()
     {
@@ -19,6 +22,7 @@ public class GameManager : MonoBehaviour
         _lives[0] = startingLives;
         _lives[1] = startingLives;
         if (gameOverPanel) gameOverPanel.SetActive(false);
+        if (missionCompletePanel) missionCompletePanel.SetActive(false);
         UpdateHUD();
     }
 
@@ -39,6 +43,29 @@ public class GameManager : MonoBehaviour
         UpdateHUD();
     }
 
+    public void OnTimerExpired()
+    {
+        // Called by StageTimer when time runs out
+        bool p1Connected = GunInputReader.Instance.players[0].isConnected;
+        bool p2Connected = GunInputReader.Instance.players[1].isConnected;
+
+        bool anyoneAlive = (_lives[0] > 0 && p1Connected) ||
+                           (_lives[1] > 0 && p2Connected);
+
+        if (anyoneAlive)
+        {
+            // At least one player survived — mission complete
+            if (missionCompletePanel)
+                missionCompletePanel.SetActive(true);
+        }
+        else
+        {
+            // Everyone is dead — game over
+            if (gameOverPanel)
+                gameOverPanel.SetActive(true);
+        }
+    }
+
     void UpdateHUD()
     {
         HUDManager.Instance?.UpdateLives(_lives[0], _lives[1]);
@@ -50,10 +77,24 @@ public class GameManager : MonoBehaviour
         bool p1Connected = GunInputReader.Instance.players[0].isConnected;
         bool p2Connected = GunInputReader.Instance.players[1].isConnected;
 
-        bool gameOver = (_lives[0] <= 0 && p1Connected) ||
-                        (_lives[1] <= 0 && p2Connected);
+        // Game over only if ALL connected players are dead
+        bool p1Dead = _lives[0] <= 0 && p1Connected;
+        bool p2Dead = _lives[1] <= 0 && p2Connected;
 
-        if (gameOver && gameOverPanel)
-            gameOverPanel.SetActive(true);
+        bool gameOver = false;
+
+        if (p1Connected && p2Connected)
+            gameOver = p1Dead && p2Dead; // both must be dead
+        else if (p1Connected)
+            gameOver = p1Dead;
+        else if (p2Connected)
+            gameOver = p2Dead;
+
+        if (gameOver)
+        {
+            StageTimer.Instance?.StopTimer();
+            if (gameOverPanel)
+                gameOverPanel.SetActive(true);
+        }
     }
 }

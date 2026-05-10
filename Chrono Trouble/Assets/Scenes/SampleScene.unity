@@ -492,6 +492,11 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!1 &425208589 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 899494711998674998, guid: e5da9fc78ee8c094d8d68caa1e163714, type: 3}
+  m_PrefabInstance: {fileID: 2993501117599897783}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &574339134
 GameObject:
   m_ObjectHideFlags: 0
@@ -601,7 +606,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85e639cd059247a4a89bad68b1969f4e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemySpawner
-  enemyPrefab: {fileID: 6744820289363576512, guid: acbf5f2420a55e84191a9f2cdb6d64a0, type: 3}
+  enemyPrefab: {fileID: 4220424538108540153, guid: 09c8094e24284974a9d110a2bbfbe123, type: 3}
   spawnPoints:
   - {fileID: 280905251}
   - {fileID: 574339135}
@@ -741,6 +746,17 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 2122763672422029451, guid: e5da9fc78ee8c094d8d68caa1e163714, type: 3}
   m_PrefabInstance: {fileID: 2993501117599897783}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1861892897 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7850670904894446134, guid: e5da9fc78ee8c094d8d68caa1e163714, type: 3}
+  m_PrefabInstance: {fileID: 2993501117599897783}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
 --- !u!1 &1973006154
 GameObject:
   m_ObjectHideFlags: 0
@@ -771,8 +787,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8a69b56b9021b5649ab6dbf57cf8165d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
-  startingLives: 3
+  startingLives: 6
   gameOverPanel: {fileID: 1464378130}
+  missionCompletePanel: {fileID: 425208589}
+  gameOverText: {fileID: 1861892897}
 --- !u!4 &1973006156
 Transform:
   m_ObjectHideFlags: 0

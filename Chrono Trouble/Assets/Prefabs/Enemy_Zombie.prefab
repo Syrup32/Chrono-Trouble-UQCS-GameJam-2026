@@ -68,6 +68,76 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HeadCollider
   parentEnemy: {fileID: 4396346740529110143}
   headshotDamage: 3
+--- !u!1001 &6571424747606915903
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 6368700935621047001}
+    m_Modifications:
+    - target: {fileID: 1432951499188351216, guid: f99bbd0754201f448b27f0c455b92b76, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1432951499188351216, guid: f99bbd0754201f448b27f0c455b92b76, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1432951499188351216, guid: f99bbd0754201f448b27f0c455b92b76, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1432951499188351216, guid: f99bbd0754201f448b27f0c455b92b76, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1432951499188351216, guid: f99bbd0754201f448b27f0c455b92b76, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1432951499188351216, guid: f99bbd0754201f448b27f0c455b92b76, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1432951499188351216, guid: f99bbd0754201f448b27f0c455b92b76, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1432951499188351216, guid: f99bbd0754201f448b27f0c455b92b76, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1432951499188351216, guid: f99bbd0754201f448b27f0c455b92b76, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1432951499188351216, guid: f99bbd0754201f448b27f0c455b92b76, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1432951499188351216, guid: f99bbd0754201f448b27f0c455b92b76, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1432951499188351216, guid: f99bbd0754201f448b27f0c455b92b76, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1776966266084158026, guid: f99bbd0754201f448b27f0c455b92b76, type: 3}
+      propertyPath: m_Name
+      value: Zombie
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f99bbd0754201f448b27f0c455b92b76, type: 3}
+--- !u!4 &5246902706436443087 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1432951499188351216, guid: f99bbd0754201f448b27f0c455b92b76, type: 3}
+  m_PrefabInstance: {fileID: 6571424747606915903}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &6999457530785112976
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -76,6 +146,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 4125642814736486729, guid: a0d5329977afda04c83bddc1736167bd, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4125642814736486729, guid: a0d5329977afda04c83bddc1736167bd, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.5
+      objectReference: {fileID: 0}
     - target: {fileID: 4125642814736486729, guid: a0d5329977afda04c83bddc1736167bd, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -120,6 +198,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy_Zombie
       objectReference: {fileID: 0}
+    - target: {fileID: 9193492681190360768, guid: a0d5329977afda04c83bddc1736167bd, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 2438450263125256228, guid: a0d5329977afda04c83bddc1736167bd, type: 3}
     m_RemovedGameObjects: []
@@ -127,6 +209,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4125642814736486729, guid: a0d5329977afda04c83bddc1736167bd, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4918297419342457946}
+    - targetCorrespondingSourceObject: {fileID: 4125642814736486729, guid: a0d5329977afda04c83bddc1736167bd, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5246902706436443087}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 4375664694900041040, guid: a0d5329977afda04c83bddc1736167bd, type: 3}
       insertIndex: -1
@@ -162,13 +247,13 @@ MonoBehaviour:
   timeBeforeAttacking: 5
   attackInterval: 5
   hitProbability: 0.5
-  attackSound: {fileID: 0}
-  deathSound: {fileID: 0}
-  hitSound: {fileID: 0}
+  attackSound: {fileID: 8300000, guid: ebd2d7d972f8be04d9dff92d91b6fae0, type: 3}
+  deathSound: {fileID: 8300000, guid: de89a91b29446454c9bbca43416c1886, type: 3}
+  hitSound: {fileID: 8300000, guid: 5d809986a1268d144b80ba23ba58b696, type: 3}
   attackSoundVolume: 1
   deathSoundVolume: 1
   hitSoundVolume: 1
   isDead: 0
-  moveSpeed: 0.5
+  moveSpeed: 0.8
   attackDistance: 3
   stopDistance: 2.5
