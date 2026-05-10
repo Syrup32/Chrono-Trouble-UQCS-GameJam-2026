@@ -223,13 +223,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BirdSwarm
   maxHitPoints: 1
-  maxScore: 500
-  minScore: 50
+  maxScore: 700
+  minScore: 100
   scoreDecayRate: 50
   canAttack: 1
-  timeBeforeAttacking: 20
+  timeBeforeAttacking: 14
   attackInterval: 7
-  hitProbability: 0.8
+  hitProbability: 0.2
   attackSound: {fileID: 0}
   deathSound: {fileID: 0}
   hitSound: {fileID: 0}

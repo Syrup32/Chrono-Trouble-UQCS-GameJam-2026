@@ -221,13 +221,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InfantryEnemy
   maxHitPoints: 5
-  maxScore: 500
-  minScore: 50
+  maxScore: 1000
+  minScore: 200
   scoreDecayRate: 50
   canAttack: 1
-  timeBeforeAttacking: 3
-  attackInterval: 1
-  hitProbability: 0.8
+  timeBeforeAttacking: 14
+  attackInterval: 14
+  hitProbability: 0.4
   attackSound: {fileID: 0}
   deathSound: {fileID: 0}
   hitSound: {fileID: 0}

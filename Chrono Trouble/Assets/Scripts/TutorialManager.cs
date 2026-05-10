@@ -5,160 +5,222 @@ using System.Collections;
 
 public class TutorialManager : MonoBehaviour
 {
+    [Header("VO Clips")]
+    public AudioClip voIntro;
+    public AudioClip voTrigger;
+    public AudioClip voReload;
+    public AudioClip voTask;
+
     [Header("UI")]
-    public TextMeshProUGUI instructionText;
-    public TextMeshProUGUI progressText;
+    public GameObject popupPanel;
+    public TextMeshProUGUI popupText;
+    public CanvasGroup popupCanvasGroup;
+    public TextMeshProUGUI timerText;
 
     [Header("Targets")]
     public GameObject targetPrefab;
     public Transform[] targetSpawnPoints;
 
-    private int _currentStep = 0;
-    private bool _stepComplete = false;
-    private int _shotsHit = 0;
-    private int _shotsFired = 0;
-    private bool _hasReloaded = false;
+    [Header("Settings")]
+    public float taskDuration = 15f;
+    public float popupFadeDuration = 0.5f;
 
-    string[] _instructions = new string[]
+    private AudioSource _audioSource;
+    private bool _waitingForDismiss = false;
+    private bool _dismissed = false;
+    private bool _triggerWasPressed = false;
+    private float _taskTimer = 0f;
+    private bool _taskRunning = false;
+    private int _shotsHit = 0;
+    private bool _hasShot = false;
+
+    string[] _popupTexts = new string[]
     {
-        "Welcome! Point your gun at the screen.\nYour crosshair will appear when tracking.",
-        "Pull the trigger to shoot.\nHit 3 targets to continue.",
-        "You have 10 rounds per magazine.\nEmpty your gun to trigger an auto-reload.\nOr point off screen to reload manually.",
-        "Enemies will shoot back if not eliminated in time.\nShoot the target before time runs out!",
-        "Tutorial complete!\nPull trigger to continue to Stage Select."
+        "This is the only training and test we give to people who want to become mercenaries.\n\nAll mercenaries are issued a Mk23 SOCOM, use it wisely.\n\nThat's all. Good luck.\n\n[Pull trigger to continue]",
+        "Aim the gun at the screen and you will see your crosshair.\n\nPull the trigger to fire your gun.\n\n[Pull trigger to continue]",
+        "Run out of ammunition or aim off of the screen to reload.\n\n[Pull trigger to continue]",
+        "You are always under a time limit.\n\nFor this training, just take out as many targets as possible in 15 seconds.\n\n[Pull trigger to continue]"
     };
+
+    void Awake()
+    {
+        _audioSource = gameObject.AddComponent<AudioSource>();
+    }
 
     void Start()
     {
+        if (timerText) timerText.gameObject.SetActive(false);
+        if (popupPanel) popupPanel.SetActive(false);
         StartCoroutine(RunTutorial());
+    }
+
+    void Update()
+    {
+        bool anyTrigger = GunInputReader.Instance != null &&
+                          (GunInputReader.Instance.players[0].fire ||
+                           GunInputReader.Instance.players[1].fire);
+
+        if (anyTrigger && !_triggerWasPressed)
+        {
+            if (_waitingForDismiss)
+            {
+                _dismissed = true;
+                // Stop VO when player dismisses
+                if (_audioSource.isPlaying)
+                    _audioSource.Stop();
+            }
+        }
+        _triggerWasPressed = anyTrigger;
+
+        if (_taskRunning)
+        {
+            _taskTimer -= Time.deltaTime;
+            UpdateTimerDisplay();
+
+            if (_taskTimer <= 0f)
+            {
+                _taskTimer = 0f;
+                _taskRunning = false;
+                UpdateTimerDisplay();
+                StartCoroutine(EndTask());
+            }
+        }
+
+        if (!_hasShot && GunInputReader.Instance != null)
+        {
+            bool anyFire = GunInputReader.Instance.players[0].fire ||
+                           GunInputReader.Instance.players[1].fire;
+            if (anyFire) _hasShot = true;
+        }
     }
 
     IEnumerator RunTutorial()
     {
-        // Step 0 — tracking
-        yield return RunStep0();
+        // Step 0 — Intro
+        yield return ShowPopup(0, voIntro);
 
-        // Step 1 — basic shooting
-        yield return RunStep1();
+        // Step 1 — Trigger tutorial
+        yield return ShowPopup(1, voTrigger);
 
-        // Step 2 — reload
-        yield return RunStep2();
+        // Wait for player to fire at least once
+        _hasShot = false;
+        yield return new WaitUntil(() => _hasShot);
 
-        // Step 3 — timed enemy
-        yield return RunStep3();
+        // Step 2 — Reload tutorial
+        yield return ShowPopup(2, voReload);
 
-        // Step 4 — complete
-        yield return RunStep4();
+        // Wait for player to reload
+        yield return new WaitUntil(() =>
+            ShootingSystem.Instance != null &&
+            (ShootingSystem.Instance.IsReloading(0) ||
+             ShootingSystem.Instance.IsReloading(1)));
 
+        yield return new WaitUntil(() =>
+            ShootingSystem.Instance != null &&
+            (ShootingSystem.Instance.GetAmmo(0) == 10 ||
+             ShootingSystem.Instance.GetAmmo(1) == 10));
+
+        // Step 3 — Task tutorial
+        yield return ShowPopup(3, voTask);
+
+        // Start task phase
+        _taskTimer = taskDuration;
+        _taskRunning = true;
+
+        if (timerText)
+        {
+            timerText.gameObject.SetActive(true);
+            UpdateTimerDisplay();
+        }
+
+        StartCoroutine(SpawnTargets());
+    }
+
+    IEnumerator ShowPopup(int textIndex, AudioClip voClip)
+    {
+        _dismissed = false;
+        _waitingForDismiss = false;
+
+        if (popupPanel) popupPanel.SetActive(true);
+        if (popupText) popupText.text = _popupTexts[textIndex];
+        if (popupCanvasGroup) popupCanvasGroup.alpha = 1f;
+
+        // Play VO
+        if (voClip != null)
+            _audioSource.PlayOneShot(voClip);
+
+        // Brief delay before allowing dismissal
+        yield return new WaitForSeconds(0.5f);
+        _waitingForDismiss = true;
+
+        // Wait for trigger press to dismiss
+        yield return new WaitUntil(() => _dismissed);
+
+        // Fade out popup
+        yield return FadeOutPopup();
+
+        yield return new WaitForSeconds(0.3f);
+    }
+
+    IEnumerator FadeOutPopup()
+    {
+        if (popupCanvasGroup == null)
+        {
+            if (popupPanel) popupPanel.SetActive(false);
+            yield break;
+        }
+
+        float elapsed = 0f;
+        while (elapsed < popupFadeDuration)
+        {
+            elapsed += Time.deltaTime;
+            popupCanvasGroup.alpha = 1f - (elapsed / popupFadeDuration);
+            yield return null;
+        }
+
+        popupCanvasGroup.alpha = 0f;
+        if (popupPanel) popupPanel.SetActive(false);
+    }
+
+    IEnumerator SpawnTargets()
+    {
+        while (_taskRunning)
+        {
+            if (targetSpawnPoints.Length > 0)
+            {
+                Transform spawnPoint = targetSpawnPoints[
+                    Random.Range(0, targetSpawnPoints.Length)];
+                GameObject target = Instantiate(
+                    targetPrefab, spawnPoint.position, spawnPoint.rotation);
+
+                Enemy enemy = target.GetComponent<Enemy>();
+                if (enemy != null)
+                {
+                    enemy.timeBeforeAttacking = 999f;
+                    enemy.canAttack = false;
+                    enemy.OnEnemyDeactivated += () => _shotsHit++;
+                }
+            }
+
+            yield return new WaitForSeconds(0.4f);
+        }
+    }
+
+    IEnumerator EndTask()
+    {
+        yield return new WaitForSeconds(1f);
+        if (timerText) timerText.gameObject.SetActive(false);
         GameFlowManager.Instance?.GoToStageSelect();
     }
 
-    IEnumerator RunStep0()
+    void UpdateTimerDisplay()
     {
-        instructionText.text = _instructions[0];
-        progressText.text = "";
+        if (timerText == null) return;
 
-        // Wait until at least one player has tracking
-        yield return new WaitUntil(() =>
-            GunInputReader.Instance != null &&
-            (!GunInputReader.Instance.players[0].trackingLost ||
-             !GunInputReader.Instance.players[1].trackingLost)
-        );
+        // Display as float with 2 decimal places
+        timerText.text = _taskTimer.ToString("F2");
 
-        yield return new WaitForSeconds(1f);
-    }
-
-    IEnumerator RunStep1()
-    {
-        instructionText.text = _instructions[1];
-        _shotsHit = 0;
-
-        // Spawn 3 targets one at a time
-        for (int i = 0; i < 3; i++)
-        {
-            progressText.text = $"Targets hit: {_shotsHit}/3";
-            SpawnTarget();
-            yield return new WaitUntil(() => _shotsHit > i);
-        }
-
-        progressText.text = "Targets hit: 3/3";
-        yield return new WaitForSeconds(1f);
-    }
-
-    IEnumerator RunStep2()
-    {
-        instructionText.text = _instructions[2];
-        progressText.text = "Waiting for reload...";
-        _hasReloaded = false;
-
-        yield return new WaitUntil(() =>
-        {
-            if (ShootingSystem.Instance == null) return false;
-            return ShootingSystem.Instance.GetAmmo(0) == 0 ||
-                   ShootingSystem.Instance.GetAmmo(1) == 0 ||
-                   ShootingSystem.Instance.IsReloading(0) ||
-                   ShootingSystem.Instance.IsReloading(1);
-        });
-
-        progressText.text = "Reloading...";
-
-        yield return new WaitUntil(() =>
-        {
-            if (ShootingSystem.Instance == null) return false;
-            return ShootingSystem.Instance.GetAmmo(0) == 10 ||
-                   ShootingSystem.Instance.GetAmmo(1) == 10;
-        });
-
-        progressText.text = "Reloaded!";
-        yield return new WaitForSeconds(1f);
-    }
-
-    IEnumerator RunStep3()
-    {
-        instructionText.text = _instructions[3];
-        progressText.text = "Shoot the target!";
-
-        _shotsHit = 0;
-        GameObject target = SpawnTarget(useTimer: true);
-
-        yield return new WaitUntil(() => _shotsHit > 0 || target == null || !target.activeSelf);
-
-        yield return new WaitForSeconds(1f);
-    }
-
-    IEnumerator RunStep4()
-    {
-        instructionText.text = _instructions[4];
-        progressText.text = "";
-
-        bool _waitingForRelease = true;
-        yield return new WaitUntil(() =>
-        {
-            if (GunInputReader.Instance == null) return false;
-            bool anyTrigger = GunInputReader.Instance.players[0].fire ||
-                              GunInputReader.Instance.players[1].fire;
-            if (_waitingForRelease) { if (!anyTrigger) _waitingForRelease = false; return false; }
-            return anyTrigger;
-        });
-    }
-
-    GameObject SpawnTarget(bool useTimer = false)
-    {
-        if (targetSpawnPoints.Length == 0) return null;
-
-        Transform spawnPoint = targetSpawnPoints[
-            Random.Range(0, targetSpawnPoints.Length)];
-
-        GameObject target = Instantiate(targetPrefab,
-            spawnPoint.position, spawnPoint.rotation);
-
-        Enemy enemy = target.GetComponent<Enemy>();
-        if (enemy != null)
-        {
-            enemy.timeBeforeAttacking = useTimer ? 3f : 999f;
-            enemy.OnEnemyDeactivated += () => _shotsHit++;
-        }
-
-        return target;
+        // Turn red when under 5 seconds
+        timerText.color = _taskTimer <= 5f ? Color.red : Color.white;
     }
 }

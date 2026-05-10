@@ -154,14 +154,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a69029a0ff6ed444a3c47207a7bdfc4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ZombieEnemy
-  maxHitPoints: 1
-  maxScore: 500
+  maxHitPoints: 3
+  maxScore: 400
   minScore: 50
   scoreDecayRate: 50
   canAttack: 1
-  timeBeforeAttacking: 3
-  attackInterval: 1
-  hitProbability: 0.8
+  timeBeforeAttacking: 5
+  attackInterval: 5
+  hitProbability: 0.5
   attackSound: {fileID: 0}
   deathSound: {fileID: 0}
   hitSound: {fileID: 0}
@@ -169,6 +169,6 @@ MonoBehaviour:
   deathSoundVolume: 1
   hitSoundVolume: 1
   isDead: 0
-  moveSpeed: 2
+  moveSpeed: 0.5
   attackDistance: 3
   stopDistance: 2.5
