@@ -6,18 +6,21 @@ using UnityEngine.InputSystem.Utilities;
 
 #if UNITY_EDITOR
 using UnityEditor;
-#endif
 
 [InitializeOnLoad]
 public static class IRGunLayoutRegistrar
 {
     static IRGunLayoutRegistrar()
     {
-        RegisterLayout();
+        IRGunLayoutRegistrarRuntime.RegisterLayout();
     }
+}
+#endif
 
+public static class IRGunLayoutRegistrarRuntime
+{
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-    static void RegisterLayout()
+    public static void RegisterLayout()
     {
         InputSystem.RegisterLayout<IRGunDevice>(
             matches: new InputDeviceMatcher()
@@ -48,11 +51,11 @@ public struct IRGunState : IInputStateTypeInfo
 
     [System.Runtime.InteropServices.FieldOffset(2)]
     [InputControl(name = "stick/x", format = "SHRT", layout = "Axis",
-        parameters = "normalize,normalizeMin=-32767,normalizeMax=32767,normalizeZero=0")]
+        parameters = "normalize=true,normalizeMin=-32767,normalizeMax=32767,normalizeZero=0,clamp=false")]
     public short axisX;
 
     [System.Runtime.InteropServices.FieldOffset(4)]
     [InputControl(name = "stick/y", format = "SHRT", layout = "Axis",
-        parameters = "normalize,normalizeMin=-32767,normalizeMax=32767,normalizeZero=0")]
+        parameters = "normalize=true,normalizeMin=-32767,normalizeMax=32767,normalizeZero=0,clamp=false")]
     public short axisY;
 }
