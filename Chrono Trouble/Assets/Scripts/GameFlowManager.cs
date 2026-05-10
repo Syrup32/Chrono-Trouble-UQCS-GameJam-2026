@@ -38,6 +38,12 @@ public class GameFlowManager : MonoBehaviour
     public void GoToStage(int stageIndex)
     {
         selectedStage = stageIndex;
+        if (stageIndex == 2)
+        {
+            // Stage 3 slot goes to title screen
+            GoToTitle();
+            return;
+        }
         SceneTransition.Instance?.LoadScene(SCENE_STAGE_1 + stageIndex);
     }
 
